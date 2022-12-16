@@ -1,0 +1,88 @@
+package com.company;
+
+// Подключения необходимых библиотек
+
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.swing.*;
+import java.io.File;
+
+// Главный класс игры
+
+public class game {
+
+    // Главный метод, который запускает игру
+
+    public static void main(String[] args) {
+
+// Вызов диалогового окна для ввода сложности игры
+
+        String rez =
+
+                JOptionPane.showInputDialog(null,"Введите сложность игры от 1 до 7:","Сложность игры",1);
+
+// Помещение результата выбора в переменную целого типа
+
+        int slogn = rez.charAt(0)-'0';
+
+
+
+        // Проверка, что введена цифра от 1 до 7
+
+        if ((slogn>=1)&&(slogn<=7))
+
+        {
+
+            // Создание окна, в котором находится игровое поле
+
+            okno window = new okno(slogn);
+
+        }
+
+        Clip clip = getClip("C:\\Users\\powha\\Documents\\CTT\\ЗАНЯТИЯ\\Конкурсы\\Проекты\\NYRain\\src\\com\\company\\audio\\skeleton.wav");
+        Thread thread = playForever(clip); // Создание потока (последовательности данных, которая может работать параллельно с другими последовательностями)
+        // ...
+        // do stuff
+        // ...
+        boolean play = true;
+        if (!play) stopAudio(thread);
+
+    }
+
+    public static Thread playForever(Clip clip) {
+        Thread thread = new Thread(() -> {
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+            clip.start();
+            synchronized (Thread.currentThread()) { // synchronized - ключевое слово, которое позволяет заблокировать доступ к методу или части кода, если его уже использует другой поток
+                try {
+                    Thread.currentThread().wait(); // Освобождает монитор и переводит вызывающий поток в состояние ожидания до тех пор, пока другой поток не вызовет метод notify()
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        thread.start();
+        return thread;
+    }
+
+    public static void stopAudio(Thread thread) {
+        synchronized (thread) {
+            thread.notify(); // продолжает работу потока, у которого ранее был вызван метод wait()
+        }
+    }
+
+    public static Clip getClip(String filepath) {
+        String reset = "\u001B[0m";
+        String red = "\u001B[31m";
+        try {
+            Clip clip = AudioSystem.getClip();
+            clip.open(AudioSystem.getAudioInputStream(new File(filepath)));
+            return clip;
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error. Can't find an audiofile skeleton.wav");
+            System.out.println(red + "Error. Can't find an audiofile skeleton.wav" + reset);
+            throw new RuntimeException(e);
+        }
+    }
+
+}
